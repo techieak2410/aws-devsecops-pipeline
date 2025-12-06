@@ -1,0 +1,10 @@
+# Ignore Terraform variable files
+terraform/terraform.tfvars
+*.tfvars
+
+# Terraform state
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+
+
