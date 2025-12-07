@@ -1,0 +1,31 @@
+name: Security Scan
+
+on:
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: filesystem
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+
+      - name: Run Trivy Image Scan
+        run: |
+          docker build -t test-app .
+          trivy image --severity CRITICAL,HIGH test-app
+
+      - name: Run Tfsec Scan
+        uses: aquasecurity/tfsec-pr-commenter-action@v1.2.0
+        with:
+          working_directory: terraform
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+

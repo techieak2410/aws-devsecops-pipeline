@@ -1,0 +1,41 @@
+name: CI-CD Pipeline
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build_and_push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-south-1
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker Image
+        run: |
+          docker build -t application .
+
+      - name: Tag Image
+        run: |
+          docker tag application:latest ${{ steps.login-ecr.outputs.registry }}/application:latest
+
+      - name: Push Image to ECR
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/application:latest
+
+      - name: Trigger CodePipeline
+        run: |
+          aws codepipeline start-pipeline-execution --name my-devsecops-pipeline
+
