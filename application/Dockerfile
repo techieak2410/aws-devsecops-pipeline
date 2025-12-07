@@ -1,21 +1,25 @@
-# Use official Node.js LTS image
-FROM node:18-alpine
-
-# Set working directory inside the container
-WORKDIR /app
-
-# Copy package.json and package-lock.json first (for caching layers)
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install --production
-
-# Copy the rest of the application code
-COPY . .
-
-# Expose the application port (change if needed)
-EXPOSE 3000
-
-# Start the Node.js application
-CMD ["npm", "start"]
-
+# ----------- Builder Stage -----------
+    FROM node:20-alpine AS builder
+    
+    WORKDIR /app
+    
+    COPY package*.json ./
+    RUN npm install
+    
+    COPY . .
+    RUN npm run build
+    
+    # ----------- Production Stage -----------
+    FROM nginx:alpine
+    
+    # Remove default nginx static files
+    RUN rm -rf /usr/share/nginx/html/*
+    
+    # Copy Vite build output
+    COPY --from=builder /app/dist /usr/share/nginx/html
+    
+    # Expose port
+    EXPOSE 80
+    
+    CMD ["nginx", "-g", "daemon off;"]
+    
